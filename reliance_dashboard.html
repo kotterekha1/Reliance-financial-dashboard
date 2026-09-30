@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reliance Industries — Financial Performance Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#0F1B2D;
+    --navy-2:#16283F;
+    --paper:#F5F3EE;
+    --paper-dim:#E8E4D9;
+    --gold:#D4A24C;
+    --gold-dim:#8A6B34;
+    --teal:#4A8C8C;
+    --coral:#C25B4A;
+    --ink:#12181F;
+    --line: rgba(255,255,255,0.10);
+    --line-soft: rgba(18,24,31,0.10);
+    box-sizing:border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top: env(safe-area-inset-top, 0px);}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Libre Franklin',-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;}
+
+  /* ---------- Header ---------- */
+  header{
+    background:linear-gradient(180deg,var(--navy) 0%, var(--navy-2) 100%);
+    color:var(--paper);
+    padding: 40px 6vw 34px;
+  }
+  .eyebrow{
+    font-size:0.82rem;
+    letter-spacing:0.02em;
+    color:var(--gold);
+    margin:0 0 10px;
+    font-weight:600;
+  }
+  h1{
+    font-size:clamp(1.9rem, 4vw, 3.1rem);
+    line-height:1.08;
+    margin:0 0 14px;
+    font-weight:700;
+    max-width:16ch;
+  }
+  .sub{
+    font-size:1.02rem;
+    color:#C7CEDA;
+    max-width:60ch;
+    line-height:1.55;
+    margin:0 0 26px;
+  }
+  .hero-stats{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:0;
+    border-top:1px solid var(--line);
+    margin-top: 8px;
+  }
+  .hero-stat{
+    padding:18px 18px 4px 0;
+    border-right:1px solid var(--line);
+  }
+  .hero-stat:last-child{border-right:none;}
+  .hero-stat .label{font-size:0.78rem; color:#9FB0C3; margin-bottom:6px;}
+  .hero-stat .value{font-size:clamp(1.25rem,2.6vw,1.7rem); font-weight:600; letter-spacing:-0.01em;}
+  .hero-stat .delta{font-size:0.78rem; margin-top:4px;}
+  .up{color:#7FD1A8;}
+  .down{color:#E29A8C;}
+
+  /* ---------- Main ---------- */
+  main{max-width:1180px; margin:0 auto; padding: 36px 6vw 80px;}
+  section{margin-bottom:52px;}
+  .section-head{
+    display:flex; align-items:baseline; justify-content:space-between; gap:16px;
+    border-bottom:1px solid var(--line-soft);
+    padding-bottom:10px; margin-bottom:22px; flex-wrap:wrap;
+  }
+  .section-head h2{font-size:1.35rem; margin:0; font-weight:700;}
+  .section-head p{margin:0; font-size:0.86rem; color:#5b6472;}
+
+  .chart-card{
+    background:#fff;
+    border:1px solid var(--line-soft);
+    border-radius:6px;
+    padding:22px 20px 14px;
+  }
+  .chart-card canvas{max-height:340px;}
+  .two-col{display:grid; grid-template-columns:1.3fr 1fr; gap:20px;}
+  @media (max-width:800px){ .two-col{grid-template-columns:1fr;} .hero-stats{grid-template-columns:repeat(2,1fr);} }
+
+  /* toggle buttons */
+  .toggle-row{display:flex; gap:8px; margin-bottom:14px;}
+  .toggle-btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.78rem;
+    padding:6px 14px;
+    border-radius:20px;
+    border:1px solid var(--line-soft);
+    background:transparent;
+    cursor:pointer;
+    color:var(--ink);
+  }
+  .toggle-btn.active{background:var(--navy); color:var(--paper); border-color:var(--navy);}
+
+  /* ratio cards */
+  .ratio-grid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px;}
+  @media (max-width:800px){.ratio-grid{grid-template-columns:repeat(2,1fr);}}
+  .ratio-card{
+    border:1px solid var(--line-soft);
+    border-left:3px solid var(--gold);
+    padding:16px 16px;
+    background:#fff;
+  }
+  .ratio-card .label{font-size:0.82rem; color:#5b6472; margin-bottom:8px;}
+  .ratio-card .value{font-size:1.5rem; font-weight:700; font-family:'IBM Plex Mono',monospace;}
+  .ratio-card .note{font-size:0.76rem; color:#8a93a0; margin-top:6px;}
+
+  /* insights */
+  .insight{
+    display:flex; gap:16px;
+    padding:16px 0;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .insight:last-child{border-bottom:none;}
+  .insight .num{
+    font-family:'IBM Plex Mono',monospace;
+    color:var(--gold-dim);
+    font-weight:600;
+    font-size:0.9rem;
+    min-width:26px;
+  }
+  .insight p{margin:0; line-height:1.6; font-size:0.95rem;}
+  .insight b{color:var(--navy);}
+
+  table.seg{width:100%; border-collapse:collapse; font-size:0.88rem;}
+  table.seg th, table.seg td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--line-soft);}
+  table.seg th{color:#5b6472; font-weight:600; font-size:0.78rem;}
+  table.seg td.num{font-family:'IBM Plex Mono',monospace; text-align:right;}
+  table.seg th.num{text-align:right;}
+
+  footer{
+    background:var(--navy); color:#9FB0C3;
+    padding:26px 6vw 36px; font-size:0.8rem; line-height:1.7;
+  }
+  footer a{color:var(--gold);}
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12181F; --paper-dim:#1B222B; --ink:#EDEFF2; --line-soft:rgba(255,255,255,0.10);
+    }
+    :root:not([data-theme="light"]) .chart-card,
+    :root:not([data-theme="light"]) .ratio-card{background:#1B222B;}
+  }
+  :root[data-theme="dark"]{
+    --paper:#12181F; --paper-dim:#1B222B; --ink:#EDEFF2; --line-soft:rgba(255,255,255,0.10);
+  }
+  :root[data-theme="dark"] .chart-card, :root[data-theme="dark"] .ratio-card{background:#1B222B;}
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Financial analysis · FY2016-17 to FY2025-26</p>
+  <h1>Reliance Industries — ten years of growth, decoded</h1>
+  <p class="sub">Consolidated financial performance and segment-wise profitability, built from RIL's official Integrated Annual Reports (FY2023-24, FY2024-25, FY2025-26).</p>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="label">Revenue, FY2025-26</div>
+      <div class="value mono">₹11,75,919 Cr</div>
+      <div class="delta up">▲ 9.8% vs FY2024-25</div>
+    </div>
+    <div class="hero-stat">
+      <div class="label">EBITDA, FY2025-26</div>
+      <div class="value mono">₹2,07,911 Cr</div>
+      <div class="delta up">▲ 13.4% vs FY2024-25</div>
+    </div>
+    <div class="hero-stat">
+      <div class="label">Net Profit, FY2025-26</div>
+      <div class="value mono">₹95,754 Cr</div>
+      <div class="delta up">▲ 17.8% vs FY2024-25</div>
+    </div>
+    <div class="hero-stat">
+      <div class="label">Net Profit Margin</div>
+      <div class="value mono">8.1%</div>
+      <div class="delta up">▲ 0.5 pts vs FY2024-25</div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section>
+    <div class="section-head">
+      <h2>Ten-year trend</h2>
+      <p>Revenue, EBITDA and Net Profit, ₹ Crore</p>
+    </div>
+    <div class="chart-card">
+      <canvas id="trendChart"></canvas>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Segment performance</h2>
+      <p>Three-year comparison across business lines</p>
+    </div>
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="toggle-row">
+          <button class="toggle-btn active" data-metric="revenue">Revenue</button>
+          <button class="toggle-btn" data-metric="ebitda">EBITDA</button>
+        </div>
+        <canvas id="segChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <table class="seg" id="segTable"></table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Profitability &amp; growth</h2>
+      <p>Margins and YoY growth, ten-year view</p>
+    </div>
+    <div class="two-col">
+      <div class="chart-card"><canvas id="marginChart"></canvas></div>
+      <div class="chart-card"><canvas id="growthChart"></canvas></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Key ratios, FY2025-26</h2>
+    </div>
+    <div class="ratio-grid">
+      <div class="ratio-card"><div class="label">Return on Net Worth</div><div class="value">14.7%</div><div class="note">vs 14.6% in FY2024-25</div></div>
+      <div class="ratio-card"><div class="label">Return on Capital Employed</div><div class="value">11.0%</div><div class="note">vs 11.3% in FY2024-25</div></div>
+      <div class="ratio-card"><div class="label">Debt : Equity</div><div class="value">0.41</div><div class="note">Unchanged from FY2024-25</div></div>
+      <div class="ratio-card"><div class="label">EPS (₹)</div><div class="value">59.7</div><div class="note">Post 1:1 bonus share, FY2024-25</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>What the numbers show</h2>
+    </div>
+    <div>
+      <div class="insight">
+        <div class="num mono">01</div>
+        <p>Digital Services (Jio) EBITDA margin rose from <b>50.1% to 51.1%</b> across three years, while its revenue grew 32% — the group's most consistent profit engine.</p>
+      </div>
+      <div class="insight">
+        <div class="num mono">02</div>
+        <p>Oil to Chemicals (O2C) margin fell from <b>11.0% to 9.1%</b> over the same period, pulled down by weaker transportation-fuel cracks and softer downstream chemical spreads — a reminder that revenue growth and margin health don't always move together.</p>
+      </div>
+      <div class="insight">
+        <div class="num mono">03</div>
+        <p>EPS dropped from ₹102.9 to ₹51.5 between FY2023-24 and FY2024-25 — not because profit fell (it grew 2.9%), but because Reliance issued a <b>1:1 bonus share</b>, doubling the share count. Reading a ratio without reading its denominator is a common analysis mistake.</p>
+      </div>
+      <div class="insight">
+        <div class="num mono">04</div>
+        <p>Media (Network18/JioStar) is the fastest-growing segment by percentage — EBITDA margin nearly doubled from <b>7.5% to 16.7%</b> in two years, though it remains the smallest business by absolute size.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Data source: Reliance Industries Limited, Integrated Annual Reports FY2023-24, FY2024-25 and FY2025-26 —
+  "10-Year Financial Highlights" and "Management Discussion &amp; Analysis" sections. All figures in ₹ Crore unless stated.
+  This is an independent analysis for portfolio purposes and is not affiliated with Reliance Industries Limited.
+</footer>
+
+<script>
+const years = ["FY17","FY18","FY19","FY20","FY21","FY22","FY23","FY24","FY25","FY26"];
+const revenue = [330180,430731,625212,659997,539238,788743,974864,1000122,1071174,1175919];
+const ebitda  = [55529,74184,92656,102280,97580,123684,153920,178290,183422,207911];
+const netProfit=[29833,36080,39837,39880,53739,66184,73670,79020,81309,95754];
+const ebitdaMargin=[16.8,17.2,14.8,15.5,18.1,15.7,15.8,17.8,17.1,17.7];
+const npMargin=[9.0,8.4,6.4,6.0,10.0,8.4,7.6,7.9,7.6,8.1];
+const revYoY=[null,30.5,45.2,5.6,-18.3,46.3,23.6,2.6,7.1,9.8];
+
+const NAVY="#0F1B2D", GOLD="#D4A24C", TEAL="#4A8C8C", CORAL="#C25B4A";
+Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = "#5b6472";
+
+new Chart(document.getElementById('trendChart'), {
+  type:'line',
+  data:{ labels:years, datasets:[
+    {label:'Revenue', data:revenue, borderColor:NAVY, backgroundColor:NAVY, tension:0.3, pointRadius:3},
+    {label:'EBITDA', data:ebitda, borderColor:GOLD, backgroundColor:GOLD, tension:0.3, pointRadius:3},
+    {label:'Net Profit', data:netProfit, borderColor:TEAL, backgroundColor:TEAL, tension:0.3, pointRadius:3},
+  ]},
+  options:{ responsive:true, interaction:{mode:'index', intersect:false},
+    plugins:{legend:{position:'top', labels:{usePointStyle:true, boxWidth:8, font:{family:"'Libre Franklin'", size:12}}}},
+    scales:{ y:{ ticks:{ callback:v=>'₹'+(v/1000).toFixed(0)+'k Cr' } } }
+  }
+});
+
+const segData = {
+  labels:["Digital Services (Jio)","Retail","O2C","Oil & Gas","Media"],
+  revenue:{ FY24:[113176,273131,564749,24439,10157], FY25:[131336,291043,626921,25211,17762], FY26:[149965,328202,null,null,34917] },
+  ebitda:{ FY24:[56675,23108,62389,20191,765], FY25:[65001,25094,54988,21188,1833], FY26:[76560,27034,60546,19050,5842] }
+};
+let segChart;
+function renderSeg(metric){
+  const d = segData[metric];
+  if(segChart) segChart.destroy();
+  segChart = new Chart(document.getElementById('segChart'), {
+    type:'bar',
+    data:{ labels:segData.labels, datasets:[
+      {label:'FY2023-24', data:d.FY24, backgroundColor:'#C7CEDA'},
+      {label:'FY2024-25', data:d.FY25, backgroundColor: GOLD},
+      {label:'FY2025-26', data:d.FY26, backgroundColor: NAVY},
+    ]},
+    options:{ responsive:true,
+      plugins:{legend:{position:'top', labels:{usePointStyle:true, boxWidth:8, font:{family:"'Libre Franklin'", size:11}}}},
+      scales:{ x:{ ticks:{font:{size:9}} }, y:{ ticks:{ callback:v=>'₹'+(v/1000).toFixed(0)+'k' } } }
+    }
+  });
+}
+renderSeg('revenue');
+document.querySelectorAll('.toggle-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderSeg(btn.dataset.metric);
+  });
+});
+
+new Chart(document.getElementById('marginChart'), {
+  type:'line',
+  data:{ labels:years, datasets:[
+    {label:'EBITDA margin %', data:ebitdaMargin, borderColor:GOLD, backgroundColor:GOLD, tension:0.3, pointRadius:3},
+    {label:'Net profit margin %', data:npMargin, borderColor:CORAL, backgroundColor:CORAL, tension:0.3, pointRadius:3},
+  ]},
+  options:{ responsive:true,
+    plugins:{legend:{position:'top', labels:{usePointStyle:true, boxWidth:8, font:{family:"'Libre Franklin'", size:11}}}, title:{display:true, text:'Margin (%)', font:{family:"'Libre Franklin'", size:12}, color:'#5b6472'} },
+  }
+});
+
+new Chart(document.getElementById('growthChart'), {
+  type:'bar',
+  data:{ labels:years, datasets:[
+    {label:'Revenue YoY growth %', data:revYoY, backgroundColor: ctx => (ctx.raw<0? CORAL: TEAL)}
+  ]},
+  options:{ responsive:true,
+    plugins:{legend:{display:false}, title:{display:true, text:'Revenue YoY growth (%)', font:{family:"'Libre Franklin'", size:12}, color:'#5b6472'}},
+  }
+});
+
+const tableRows = [
+  ["Digital Services (Jio)","FY2023-24","1,13,176","56,675","50.1%"],
+  ["Digital Services (Jio)","FY2024-25","1,31,336","65,001","49.5%"],
+  ["Digital Services (Jio)","FY2025-26","1,49,965","76,560","51.1%"],
+  ["Retail","FY2023-24","2,73,131","23,108","8.5%"],
+  ["Retail","FY2024-25","2,91,043","25,094","8.6%"],
+  ["Retail","FY2025-26","3,28,202","27,034","8.2%"],
+  ["O2C","FY2023-24","5,64,749","62,389","11.0%"],
+  ["O2C","FY2024-25","6,26,921","54,988","8.8%"],
+  ["O2C","FY2025-26","—","60,546","9.1%"],
+  ["Oil &amp; Gas","FY2023-24","24,439","20,191","82.6%"],
+  ["Oil &amp; Gas","FY2024-25","25,211","21,188","84.0%"],
+  ["Oil &amp; Gas","FY2025-26","—","19,050","79.8%"],
+  ["Media","FY2023-24","10,157","765","7.5%"],
+  ["Media","FY2024-25","17,762","1,833","10.3%"],
+  ["Media","FY2025-26","34,917","5,842","16.7%"],
+];
+const tbl = document.getElementById('segTable');
+tbl.innerHTML = `<thead><tr><th>Segment</th><th>Year</th><th class="num">Revenue</th><th class="num">EBITDA</th><th class="num">Margin</th></tr></thead>
+<tbody>${tableRows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="num">${r[2]}</td><td class="num">${r[3]}</td><td class="num">${r[4]}</td></tr>`).join('')}</tbody>`;
+</script>
+
+</body>
+</html>
